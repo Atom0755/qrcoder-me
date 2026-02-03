@@ -50,7 +50,10 @@ export default function Home() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-800">专业版</h2>
               <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-                ¥99/年
+                $5/Monthly每月
+              </span>
+              <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
+                $50/Yearly每年
               </span>
             </div>
             
