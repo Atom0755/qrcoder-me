@@ -1,12 +1,44 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+let supabaseInstance: SupabaseClient | null = null
 
-// Create a dummy client during build time to avoid errors
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null as any
+function getSupabaseClient(): SupabaseClient {
+  // Return existing instance if already created
+  if (supabaseInstance) {
+    return supabaseInstance
+  }
+
+  // Get environment variables
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  // Check if we're in build time (server-side without env vars)
+  if (typeof window === 'undefined' && (!supabaseUrl || !supabaseAnonKey)) {
+    // During build, return a mock client to prevent errors
+    return {
+      auth: { getUser: async () => ({ data: { user: null }, error: null }) }
+    } as any
+  }
+
+  // Runtime check - throw error if env vars missing
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      'Supabase环境变量未配置。请在Vercel中设置NEXT_PUBLIC_SUPABASE_URL和NEXT_PUBLIC_SUPABASE_ANON_KEY'
+    )
+  }
+
+  // Create and cache the instance
+  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey)
+  return supabaseInstance
+}
+
+// Export the client using a getter
+export const supabase = new Proxy({} as SupabaseClient, {
+  get: (target, prop) => {
+    const client = getSupabaseClient()
+    return client[prop as keyof SupabaseClient]
+  }
+})
 
 export type Database = {
   public: {
