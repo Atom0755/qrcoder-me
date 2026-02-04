@@ -16,15 +16,48 @@ function getSupabaseClient(): SupabaseClient {
   if (typeof window === 'undefined' && (!supabaseUrl || !supabaseAnonKey)) {
     // During build, return a mock client to prevent errors
     return {
-      auth: { getUser: async () => ({ data: { user: null }, error: null }) }
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
+        signInWithPassword: async () => ({ data: { user: null, session: null }, error: { message: 'Build time mock' } }),
+        signUp: async () => ({ data: { user: null, session: null }, error: { message: 'Build time mock' } }),
+      },
+      from: () => ({
+        select: () => ({ data: [], error: null }),
+        insert: () => ({ data: null, error: { message: 'Build time mock' } }),
+        update: () => ({ data: null, error: { message: 'Build time mock' } }),
+      })
     } as any
   }
 
-  // Runtime check - throw error if env vars missing
+  // Runtime check - if env vars missing, create a non-functional client
+  // that returns helpful errors instead of throwing
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      'Supabase环境变量未配置。请在Vercel中设置NEXT_PUBLIC_SUPABASE_URL和NEXT_PUBLIC_SUPABASE_ANON_KEY'
-    )
+    console.error('Supabase environment variables are missing!')
+    console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'SET' : 'MISSING')
+    console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'SET' : 'MISSING')
+
+    // Return a mock client that will show error messages
+    return {
+      auth: {
+        getUser: async () => ({
+          data: { user: null },
+          error: { message: 'Supabase环境变量未配置。请在Vercel中设置NEXT_PUBLIC_SUPABASE_URL和NEXT_PUBLIC_SUPABASE_ANON_KEY' }
+        }),
+        signInWithPassword: async () => ({
+          data: { user: null, session: null },
+          error: { message: 'Supabase环境变量未配置' }
+        }),
+        signUp: async () => ({
+          data: { user: null, session: null },
+          error: { message: 'Supabase环境变量未配置' }
+        }),
+      },
+      from: () => ({
+        select: async () => ({ data: [], error: { message: 'Supabase环境变量未配置' } }),
+        insert: async () => ({ data: null, error: { message: 'Supabase环境变量未配置' } }),
+        update: async () => ({ data: null, error: { message: 'Supabase环境变量未配置' } }),
+      })
+    } as any
   }
 
   // Create and cache the instance
@@ -32,7 +65,7 @@ function getSupabaseClient(): SupabaseClient {
   return supabaseInstance
 }
 
-// Export the client using a getter
+// Export as a simple getter - no Proxy needed
 export const supabase = new Proxy({} as SupabaseClient, {
   get: (target, prop) => {
     const client = getSupabaseClient()

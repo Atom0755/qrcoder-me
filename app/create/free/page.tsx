@@ -22,7 +22,14 @@ export default function CreateFreePage() {
 
     try {
       // 检查用户是否登录
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+      // 检查是否有环境变量错误
+      if (authError && authError.message.includes('环境变量')) {
+        setMessage({ type: 'error', text: authError.message })
+        return
+      }
+
       if (!user) {
         setMessage({ type: 'error', text: '请先登录或注册' })
         setTimeout(() => router.push('/login'), 2000)
