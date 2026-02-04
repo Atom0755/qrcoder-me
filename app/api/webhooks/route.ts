@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const getSupabase = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  return createClient(supabaseUrl, supabaseAnonKey)
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
@@ -26,13 +32,13 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        
+
         // 创建订阅记录
         const subscription = await stripe.subscriptions.retrieve(
           session.subscription as string
         )
 
-        await supabase.from('subscriptions').insert({
+        await getSupabase().from('subscriptions').insert({
           user_id: session.metadata?.user_id,
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: subscription.id,
@@ -46,7 +52,7 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
 
-        await supabase
+        await getSupabase()
           .from('subscriptions')
           .update({
             status: subscription.status,
@@ -60,18 +66,18 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
 
-        await supabase
+        await getSupabase()
           .from('subscriptions')
           .update({ status: 'canceled' })
           .eq('stripe_subscription_id', subscription.id)
 
         // 将该用户的所有专业版二维码设为失效
-        await supabase
+        await getSupabase()
           .from('qrcodes')
           .update({ is_active: false })
           .eq('qr_type', 'premium')
           .in('user_id', [
-            supabase
+            getSupabase()
               .from('subscriptions')
               .select('user_id')
               .eq('stripe_subscription_id', subscription.id)
@@ -82,10 +88,10 @@ export async function POST(req: NextRequest) {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
-        
+
         // 通知用户支付失败
         console.log('Payment failed for:', invoice.customer)
-        
+
         break
       }
 
