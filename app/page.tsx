@@ -19,7 +19,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-800">免费版</h2>
               <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                ¥0
+                $0
               </span>
             </div>
             
@@ -46,17 +46,18 @@ export default function Home() {
           </div>
 
           {/* Premium Plan */}
-          <div className="flex items-center justify-between mb-4">
-  <h2 className="text-xl font-bold text-gray-800">专业版</h2>
-  <div className="flex flex-col items-end gap-1">
-    <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-      $5/月
-    </span>
-    <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium">
-      或 $50/年
-    </span>
-  </div>
-</div>
+          <div className="card border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-blue-50">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-800">专业版</h2>
+              <div className="flex flex-col items-end gap-1">
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
+                  $5/月
+                </span>
+                <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                  或 $50/年
+                </span>
+              </div>
+            </div>
             
             <ul className="space-y-3 mb-6">
               <li className="flex items-start">
